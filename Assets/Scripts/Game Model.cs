@@ -2,21 +2,22 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class GameManager : MonoBehaviour
+public class GameModel : MonoBehaviour
 {
-    private static GameManager _instance;
+    private static GameModel _instance;
+    [System.NonSerialized] public int currentLevel;
 
-    public static GameManager Instance
+    public static GameModel Instance
     {
         get
         {
             if (_instance == null)
             {
-                _instance = FindObjectOfType<GameManager>();
+                _instance = FindObjectOfType<GameModel>();
                 if (_instance == null)
                 {
-                    GameObject singletonObject = new GameObject(typeof(GameManager).Name);
-                    _instance = singletonObject.AddComponent<GameManager>();
+                    GameObject singletonObject = new GameObject(typeof(GameModel).Name);
+                    _instance = singletonObject.AddComponent<GameModel>();
                     DontDestroyOnLoad(singletonObject);
                 }
             }
@@ -24,7 +25,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Diğer GameManager fonksiyonları buraya eklenebilir
+    // Diğer GameModel fonksiyonları buraya eklenebilir
 
     private void Awake()
     {
@@ -37,8 +38,9 @@ public class GameManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+        currentLevel = 1;
+        GameView.Instance.UpdateLevelText(1);
     }
 
     // Oyun yönetimiyle ilgili diğer metotlar buraya eklenebilir
 }
-
