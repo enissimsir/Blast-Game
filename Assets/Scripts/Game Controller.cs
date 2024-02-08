@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 public class GameController : MonoBehaviour
 {
     private static GameController _instance;
+    public GameObject buttonObject;
 
     public static GameController Instance
     {
@@ -28,14 +29,16 @@ public class GameController : MonoBehaviour
     // Diğer GameController fonksiyonları buraya eklenebilir
 
     // Yeni sahneyi yüklemek için metot
-    public void LoadNewScene()
+    public void LoadTheLevel()
     {
-        Debug.Log("oeooe");
+        buttonObject.SetActive(false);
+
         int currentLevel;
         if (GameModel.Instance != null)
         {
             currentLevel = GameModel.Instance.currentLevel;
-            SceneManager.LoadScene(currentLevel);
+            //    SceneManager.LoadScene(currentLevel);
+            GameView.Instance.LoadTheNextLevel(currentLevel);
         }
 
         
