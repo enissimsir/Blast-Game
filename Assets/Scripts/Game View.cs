@@ -101,17 +101,24 @@ public class GameView : MonoBehaviour
         // Determining the edge sizes of cells in the grid
         gridLayout = gridObject.GetComponent<GridLayoutGroup>();
         RectTransform gridRectTransform = gridObject.GetComponent<RectTransform>();
-        float gridWidth = gridRectTransform.sizeDelta.x;
-        float cellEdgeLength = gridWidth / levelData.grid_width;
-        gridRectTransform.sizeDelta = new Vector2(cellEdgeLength * levelData.grid_width, cellEdgeLength * levelData.grid_height);
-        gridLayout.cellSize = new Vector2(cellEdgeLength, cellEdgeLength);
+        SpriteRenderer spriteRenderer = colorPrefabs[0].GetComponent<SpriteRenderer>();
+        float originalCellWidth = spriteRenderer.sprite.bounds.size.x;
 
+
+        float gridWidth = gridRectTransform.sizeDelta.x;
+        float desiredCellEdge = gridWidth / levelData.grid_width;
+        float scaleFactor = desiredCellEdge / originalCellWidth;
+
+        gridRectTransform.sizeDelta = new Vector2(desiredCellEdge * levelData.grid_width, desiredCellEdge * levelData.grid_height);
+        gridLayout.cellSize = new Vector2(desiredCellEdge, desiredCellEdge);
+        Debug.Log("desired edge = " + desiredCellEdge + "scale = " + scaleFactor);
         // Önce gridi temizle
         foreach (Transform child in gridObject.transform)
         {
             Destroy(child.gameObject);
         }
-
+        float startPositionX = -desiredCellEdge * levelData.grid_width / 2;
+        float startPositionY = -desiredCellEdge * levelData.grid_height / 2;
         int index = 0;
         for (int row = 0; row < levelData.grid_height; row++)
         {
@@ -124,9 +131,10 @@ public class GameView : MonoBehaviour
                 cellObject.transform.SetParent(gridObject.transform, false);
 
                 // Adjust Tile's position
-                RectTransform cellRectTransform = cellObject.GetComponent<RectTransform>();
-                cellRectTransform.anchoredPosition = new Vector2(col * cellEdgeLength, row * cellEdgeLength);
-                cellRectTransform.sizeDelta = new Vector2(cellEdgeLength, cellEdgeLength);
+                Transform cellTransform = cellObject.GetComponent<Transform>();
+                cellTransform.localPosition = new Vector2(col * desiredCellEdge/2 + startPositionX, row * desiredCellEdge/2 + startPositionY);
+                cellTransform.localScale = new Vector2(scaleFactor/2, scaleFactor/2);
+
                 // Debug.Log(cellRectTransform.anchoredPosition);
 
                 cellObjects[row, col] = cellObject.transform;

@@ -7,6 +7,14 @@ public class Tile : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     private Vector3 endDragPosition;
     private int moveAngle;
 
+    private void Start()
+    {
+        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+        float originalWidth = spriteRenderer.sprite.bounds.size.x;
+        Debug.Log("original width = " +  originalWidth);
+
+    }
+
     private void OnMouseDown()
     {
         Debug.Log("Tıkladı");
