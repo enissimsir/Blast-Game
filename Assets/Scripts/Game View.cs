@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.IO;
 using System;
+using System.Reflection;
 
 public class GameView : MonoBehaviour
 {
@@ -12,7 +13,9 @@ public class GameView : MonoBehaviour
 
     private GridLayoutGroup gridLayout;
     public GameObject gridObject;
-    public GameObject tilePrefab;
+
+    public GameObject[] colorPrefabs;
+    public GameObject boxTilePrefab;
 
     [System.NonSerialized] public Transform[,] cellObjects;
 
@@ -76,7 +79,7 @@ public class GameView : MonoBehaviour
             Debug.Log(levelData.level_number);
 
             // Okunan verileri kullanarak işlemler yapabilirsiniz
-            GenerateGrid();
+            GenerateGrid(GetCellObjects());
 
         }
         else
@@ -86,16 +89,21 @@ public class GameView : MonoBehaviour
 
     }
 
-    private void GenerateGrid()
+    private Transform[,] GetCellObjects()
     {
-        cellObjects = new Transform[10, 10];
+        return cellObjects;
+    }
 
-        // Grid içerisindeki hücrelerin kenar boylarını belirleme
+    private void GenerateGrid(Transform[,] cellObjects)
+    {
+        cellObjects = new Transform[levelData.grid_height, levelData.grid_width];
+
+        // Determining the edge sizes of cells in the grid
         gridLayout = gridObject.GetComponent<GridLayoutGroup>();
         RectTransform gridRectTransform = gridObject.GetComponent<RectTransform>();
         float gridWidth = gridRectTransform.sizeDelta.x;
         float cellEdgeLength = gridWidth / levelData.grid_width;
-        gridRectTransform.sizeDelta = new Vector2(gridRectTransform.sizeDelta.x, cellEdgeLength * levelData.grid_height);
+        gridRectTransform.sizeDelta = new Vector2(cellEdgeLength * levelData.grid_width, cellEdgeLength * levelData.grid_height);
         gridLayout.cellSize = new Vector2(cellEdgeLength, cellEdgeLength);
 
         // Önce gridi temizle
@@ -104,38 +112,170 @@ public class GameView : MonoBehaviour
             Destroy(child.gameObject);
         }
 
+        int index = 0;
         for (int row = 0; row < levelData.grid_height; row++)
         {
             for (int col = 0; col < levelData.grid_width; col++)
             {
-                // Tile prefabını instantiate et ve grid içinde konumlandır
-                GameObject cellObject = Instantiate(tilePrefab, gridObject.transform);
-                // Tile'ın pozisyonunu ve boyutunu ayarla
-                cellObject.transform.localPosition = Vector3.zero;
-                cellObject.transform.localScale = Vector3.one;
+                // Instantiate the tile prefab
+                GameObject cellObject = ChooseTheNewCell(levelData.grid[levelData.grid.Count-1-index]);
+
+                // Set gridObject as parent
+                cellObject.transform.SetParent(gridObject.transform, false);
+
+                // Adjust Tile's position
+                RectTransform cellRectTransform = cellObject.GetComponent<RectTransform>();
+                cellRectTransform.anchoredPosition = new Vector2(col * cellEdgeLength, row * cellEdgeLength);
+                cellRectTransform.sizeDelta = new Vector2(cellEdgeLength, cellEdgeLength);
+                // Debug.Log(cellRectTransform.anchoredPosition);
 
                 cellObjects[row, col] = cellObject.transform;
+                index++;
             }
         }
+     //   Debug.Log("00 = " + cellObjects[0, 0].gameObject.name);
+    }
+
+    private GameObject ChooseTheNewCell(String cell)
+    {
+        if (cell == "r")
+        {
+            return Instantiate(colorPrefabs[0]);
+        }
+        else if (cell == "g")
+        {
+            return Instantiate(colorPrefabs[1]);
+        }
+        else if (cell == "b")
+        {
+            return Instantiate(colorPrefabs[2]);
+        }
+        else if (cell == "y")
+        {
+            return Instantiate(colorPrefabs[3]);
+        }
+        else if (cell == "rand")
+        {
+            int randomIndex = UnityEngine.Random.Range(0, colorPrefabs.Length);
+            return Instantiate(colorPrefabs[randomIndex]);
+        }
+        else if (cell == "t")
+        {
+            return null;
+        }
+        else if (cell == "rov")
+        {
+            return null;
+        }
+        else if (cell == "roh")
+        {
+            return null;
+        }
+        else if (cell == "bo")
+        {
+            return Instantiate(boxTilePrefab);
+        }
+        else if (cell == "s")
+        {
+            return null;
+        }
+        else if (cell == "v")
+        {
+            return null;
+        }
+        return null;
     }
 
     /*
     private void GenerateGrid()
     {
-        // Grid'i oluştur
-        for (int x = 0; x < levelData.grid_width; x++)
+        cellObjects = new Transform[levelData.grid_height, levelData.grid_width];
+
+        // Determining the edge sizes of cells in the grid
+        gridLayout = gridObject.GetComponent<GridLayoutGroup>();
+        RectTransform gridRectTransform = gridObject.GetComponent<RectTransform>();
+        float gridWidth = gridRectTransform.sizeDelta.x;
+        float cellEdgeLength = gridWidth / levelData.grid_width;
+        gridRectTransform.sizeDelta = new Vector2(cellEdgeLength * levelData.grid_width, cellEdgeLength * levelData.grid_height);
+        gridLayout.cellSize = new Vector2(cellEdgeLength, cellEdgeLength);
+
+        // Önce gridi temizle
+        foreach (Transform child in gridObject.transform)
         {
-            for (int y = 0; y < levelData.grid_height; y++)
+            Destroy(child.gameObject);
+        }
+
+        int index = 0;
+        for (int row = levelData.grid_height - 1; row >= 0; row--)
+        {
+            for (int col = 0; col < levelData.grid_width; col++)
             {
-                // Hücre pozisyonunu belirle
-                Vector3 cellPosition = new Vector3(x, y, 0);
-                // Hücreyi oluştur
-                GameObject cell = Instantiate(cellPrefab, cellPosition, Quaternion.identity);
-                // Oluşturulan hücreyi GridManager altına ekle (isteğe bağlı)
-                cell.transform.parent = transform;
+                Debug.Log("row, col = " + row + col);
+                GameObject cellObject = ChooseTheNewCell(levelData.grid, index);
+
+                // Set gridObject as parent
+                cellObject.transform.SetParent(gridObject.transform, false);
+
+                // Adjust Tile's position
+                RectTransform cellRectTransform = cellObject.GetComponent<RectTransform>();
+                cellRectTransform.anchoredPosition = new Vector2(col * cellEdgeLength, (levelData.grid_height - 1 - row) * cellEdgeLength);
+                cellRectTransform.sizeDelta = new Vector2(cellEdgeLength, cellEdgeLength);
+
+                cellObjects[row, col] = cellObject.transform;
+                index++;
             }
         }
+    }
+
+    private GameObject ChooseTheNewCell(List<String> grid, int index)
+    {
+        Debug.Log("grid[" + index + "] = " + grid[index]);
+        if (grid[index] == "r")
+        {
+            return Instantiate(colorPrefabs[0]);
+        }else if (grid[index] == "g")
+        {
+            return Instantiate(colorPrefabs[1]);
+        }
+        else if (grid[index] == "b")
+        {
+            return Instantiate(colorPrefabs[2]);
+        }
+        else if (grid[index] == "y")
+        {
+            int randomIndex = UnityEngine.Random.Range(0, colorPrefabs.Length);
+            return Instantiate(colorPrefabs[randomIndex]);
+        }
+        else if (grid[index] == "rand")
+        {
+            return null;
+        }else if (grid[index] == "t")
+        {
+            return null;
+        }
+        else if (grid[index] == "rov")
+        {
+            return null;
+        }
+        else if (grid[index] == "roh")
+        {
+            return null;
+        }
+        else if (grid[index] == "bo")
+        {
+            return Instantiate(boxTilePrefab);
+        }
+        else if (grid[index] == "s")
+        {
+            return null;
+        }
+        else if (grid[index] == "v")
+        {
+            return null;
+        }
+        return null;
     } */
+
 
     [Serializable]
     public class LevelData
@@ -145,10 +285,5 @@ public class GameView : MonoBehaviour
         public int grid_height;
         public int move_count;
         public List<string> grid;
-        
     }
-
-
-
 }
-
