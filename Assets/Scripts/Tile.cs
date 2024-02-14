@@ -30,7 +30,7 @@ public class Tile : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         //clicking
         else
         {
-            Debug.Log("klikk");
+            gameView.Blast(transform);
         }
     }
 

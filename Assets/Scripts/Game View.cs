@@ -5,6 +5,9 @@ using UnityEngine.UI;
 using System.IO;
 using System;
 using System.Reflection;
+using System.Drawing;
+
+
 
 public class GameView : MonoBehaviour
 {
@@ -20,6 +23,7 @@ public class GameView : MonoBehaviour
     [System.NonSerialized] public Transform[,] cellObjects;
     [System.NonSerialized] public String[,] objectType;
 
+    private List<Cell> cells;
 
     public static GameView Instance
     {
@@ -56,6 +60,7 @@ public class GameView : MonoBehaviour
         }
         cellObjects = new Transform[20, 20];
         objectType = new String[20,20];
+        cells = new List<Cell>();
     }
 
     // Seviye bilgisini güncelleyen metot
@@ -141,6 +146,29 @@ public class GameView : MonoBehaviour
 
                 cellObjects[row, col] = cellObject.transform;
                 objectType[row,col] = levelData.grid[index];
+
+                Cell newCell = new Cell(row, col, levelData.grid[index]);
+                List<Cell> neighborsOfNewCell = new List<Cell>();
+                cells.Add(newCell);
+                foreach (Cell cell in cells)
+                {
+                    if(cell.Row == row)
+                    {
+                        if(cell.Col == col-1 || cell.Col == col + 1)
+                        {
+                            neighborsOfNewCell.Add(cell);
+                        }
+                    }
+                    else if(cell.Col == col)
+                    {
+                        if(cell.Row == row-1 || cell.Row == row + 1)
+                        {
+                            neighborsOfNewCell.Add(cell);
+                        }
+                    }
+                }
+                newCell.Neighbors = neighborsOfNewCell;
+
                 index++;
             }
         }
@@ -261,6 +289,45 @@ public class GameView : MonoBehaviour
         objectType[row2 , col2] = objectType[row1, col1];
     }
 
+    public void Blast(Transform currentTransform)
+    {
+        int row, col;
+        LocationFinder(out row, out col, currentTransform);
+        Cell currentCell = new Cell(row, col, objectType[row,col]);
+        List<Cell> connectedCells = new List<Cell>();
+        connectedCells = FindConnectedCells(currentCell);
+        foreach(Cell cell in connectedCells)
+        {
+            Debug.Log("row = " + row + "col = " + col);
+        }
+    }
+
+    private List<Cell> FindConnectedCells(Cell startCell)
+    {
+        List<Cell> connectedCells = new List<Cell>();
+        Queue<Cell> queue = new Queue<Cell>();
+        HashSet<Cell> visited = new HashSet<Cell>();
+
+        queue.Enqueue(startCell);
+        visited.Add(startCell);
+
+        while (queue.Count > 0)
+        {
+            Cell currentCell = queue.Dequeue();
+            connectedCells.Add(currentCell);
+
+            foreach (Cell neighbor in currentCell.Neighbors)
+            {
+                if (neighbor.Type == startCell.Type && !visited.Contains(neighbor))
+                {
+                    queue.Enqueue(neighbor);
+                    visited.Add(neighbor);
+                }
+            }
+        }
+        return connectedCells;
+    }
+
     private void LocationFinder(out int row, out int col, Transform currentTransform)
     {
         row = -1;
@@ -282,22 +349,5 @@ public class GameView : MonoBehaviour
         }
     }
 
-    public void Blast(Transform currentTransform)
-    {
-        int row = -1;
-        int col = -1;
-        for (int i = 0; i < levelData.grid_height; i++)
-        {
-            for (int j = 0; j < levelData.grid_width; j++)
-            {
-                if (cellObjects[i, j] == currentTransform)
-                {
-                    row = i;
-                    col = j;
-                    break;
-                }
-            }
-            if (row != -1) break;
-        }
-    }
+    
 }
