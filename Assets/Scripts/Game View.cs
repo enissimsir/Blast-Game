@@ -18,6 +18,7 @@ public class GameView : MonoBehaviour
     public GameObject boxTilePrefab;
 
     [System.NonSerialized] public Transform[,] cellObjects;
+    [System.NonSerialized] public String[,] objectType;
 
 
     public static GameView Instance
@@ -53,6 +54,8 @@ public class GameView : MonoBehaviour
         {
             Destroy(gameObject);
         }
+        cellObjects = new Transform[20, 20];
+        objectType = new String[20,20];
     }
 
     // Seviye bilgisini güncelleyen metot
@@ -96,14 +99,13 @@ public class GameView : MonoBehaviour
 
     private void GenerateGrid(Transform[,] cellObjects)
     {
-        cellObjects = new Transform[levelData.grid_height, levelData.grid_width];
+       // cellObjects = new Transform[levelData.grid_height, levelData.grid_width];
 
         // Determining the edge sizes of cells in the grid
         gridLayout = gridObject.GetComponent<GridLayoutGroup>();
         RectTransform gridRectTransform = gridObject.GetComponent<RectTransform>();
         SpriteRenderer spriteRenderer = colorPrefabs[0].GetComponent<SpriteRenderer>();
         float originalCellWidth = spriteRenderer.sprite.bounds.size.x;
-
 
         float gridWidth = gridRectTransform.sizeDelta.x;
         float desiredCellEdge = gridWidth / levelData.grid_width;
@@ -117,15 +119,15 @@ public class GameView : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
-        float startPositionX = -desiredCellEdge * levelData.grid_width / 2;
-        float startPositionY = -desiredCellEdge * levelData.grid_height / 2;
+        float startPositionX = -(desiredCellEdge * levelData.grid_width-1) / 4;
+        float startPositionY = -(desiredCellEdge * levelData.grid_height-1) / 4;
         int index = 0;
         for (int row = 0; row < levelData.grid_height; row++)
         {
             for (int col = 0; col < levelData.grid_width; col++)
             {
                 // Instantiate the tile prefab
-                GameObject cellObject = ChooseTheNewCell(levelData.grid[levelData.grid.Count-1-index]);
+                GameObject cellObject = ChooseTheNewCell(levelData.grid[index]);
 
                 // Set gridObject as parent
                 cellObject.transform.SetParent(gridObject.transform, false);
@@ -138,6 +140,7 @@ public class GameView : MonoBehaviour
                 // Debug.Log(cellRectTransform.anchoredPosition);
 
                 cellObjects[row, col] = cellObject.transform;
+                objectType[row,col] = levelData.grid[index];
                 index++;
             }
         }
@@ -194,97 +197,6 @@ public class GameView : MonoBehaviour
         return null;
     }
 
-    /*
-    private void GenerateGrid()
-    {
-        cellObjects = new Transform[levelData.grid_height, levelData.grid_width];
-
-        // Determining the edge sizes of cells in the grid
-        gridLayout = gridObject.GetComponent<GridLayoutGroup>();
-        RectTransform gridRectTransform = gridObject.GetComponent<RectTransform>();
-        float gridWidth = gridRectTransform.sizeDelta.x;
-        float cellEdgeLength = gridWidth / levelData.grid_width;
-        gridRectTransform.sizeDelta = new Vector2(cellEdgeLength * levelData.grid_width, cellEdgeLength * levelData.grid_height);
-        gridLayout.cellSize = new Vector2(cellEdgeLength, cellEdgeLength);
-
-        // Önce gridi temizle
-        foreach (Transform child in gridObject.transform)
-        {
-            Destroy(child.gameObject);
-        }
-
-        int index = 0;
-        for (int row = levelData.grid_height - 1; row >= 0; row--)
-        {
-            for (int col = 0; col < levelData.grid_width; col++)
-            {
-                Debug.Log("row, col = " + row + col);
-                GameObject cellObject = ChooseTheNewCell(levelData.grid, index);
-
-                // Set gridObject as parent
-                cellObject.transform.SetParent(gridObject.transform, false);
-
-                // Adjust Tile's position
-                RectTransform cellRectTransform = cellObject.GetComponent<RectTransform>();
-                cellRectTransform.anchoredPosition = new Vector2(col * cellEdgeLength, (levelData.grid_height - 1 - row) * cellEdgeLength);
-                cellRectTransform.sizeDelta = new Vector2(cellEdgeLength, cellEdgeLength);
-
-                cellObjects[row, col] = cellObject.transform;
-                index++;
-            }
-        }
-    }
-
-    private GameObject ChooseTheNewCell(List<String> grid, int index)
-    {
-        Debug.Log("grid[" + index + "] = " + grid[index]);
-        if (grid[index] == "r")
-        {
-            return Instantiate(colorPrefabs[0]);
-        }else if (grid[index] == "g")
-        {
-            return Instantiate(colorPrefabs[1]);
-        }
-        else if (grid[index] == "b")
-        {
-            return Instantiate(colorPrefabs[2]);
-        }
-        else if (grid[index] == "y")
-        {
-            int randomIndex = UnityEngine.Random.Range(0, colorPrefabs.Length);
-            return Instantiate(colorPrefabs[randomIndex]);
-        }
-        else if (grid[index] == "rand")
-        {
-            return null;
-        }else if (grid[index] == "t")
-        {
-            return null;
-        }
-        else if (grid[index] == "rov")
-        {
-            return null;
-        }
-        else if (grid[index] == "roh")
-        {
-            return null;
-        }
-        else if (grid[index] == "bo")
-        {
-            return Instantiate(boxTilePrefab);
-        }
-        else if (grid[index] == "s")
-        {
-            return null;
-        }
-        else if (grid[index] == "v")
-        {
-            return null;
-        }
-        return null;
-    } */
-
-
     [Serializable]
     public class LevelData
     {
@@ -293,5 +205,99 @@ public class GameView : MonoBehaviour
         public int grid_height;
         public int move_count;
         public List<string> grid;
+    }
+
+    public void MoveTheCell(Transform currentTransform,int moveAngle)
+    {
+        int row, col, newRow, newCol;
+        LocationFinder(out row, out col,currentTransform);
+        if (objectType[row,col]=="r" || objectType[row, col] == "b" || objectType[row, col] == "g" || objectType[row, col] == "y")
+        {
+            if (moveAngle <= 135 && moveAngle >= 45)
+            {
+                if (row < levelData.grid_height - 1)
+                {
+                    newRow = row + 1;
+                    newCol = col;
+                    positionSwap(row, col, newRow, newCol);
+                }
+            }
+            else if (moveAngle <= -135 || moveAngle >= 135)
+            {
+                if (col > 0)
+                {
+                    newRow = row;
+                    newCol = col - 1;
+                    positionSwap(row, col, newRow, newCol);
+                }
+            }
+            else if (moveAngle <= 45 && moveAngle >= -45)
+            {
+                if (col < levelData.grid_width - 1)
+                {
+                    newRow = row;
+                    newCol = col + 1;
+                    positionSwap(row, col, newRow, newCol);
+                }
+            }
+        }
+    }
+
+    private void positionSwap(int row1, int col1, int row2, int col2)
+    {
+        
+        Transform tempTransform1 = cellObjects[row1, col1];
+        Transform tempTransform2 = cellObjects[row2, col2];
+
+        cellObjects[row1, col1] = tempTransform2;
+        cellObjects[row2, col2] = tempTransform1;
+
+        Vector3 tempPosition = tempTransform1.position;
+        tempTransform1.position = tempTransform2.position;
+        tempTransform2.position = tempPosition;
+
+        String temp = objectType[row1, col1];
+        objectType[row1, col1] = objectType[row2, col2];
+        objectType[row2 , col2] = objectType[row1, col1];
+    }
+
+    private void LocationFinder(out int row, out int col, Transform currentTransform)
+    {
+        row = -1;
+        col = -1;
+        for (int i = 0; i < levelData.grid_height; i++)
+        {
+            for (int j = 0; j < levelData.grid_width; j++)
+            {
+             //   Debug.Log("cellObject[" + i + "," + j + "] = " + cellObjects[i, j] + " " + cellObjects[i, j].position);
+                if (cellObjects[i, j] == currentTransform)
+                {
+                    row = i;
+                    col = j;
+                   // Debug.Log("Tespit edilen row ve col = " + i + " " + j);
+                    break;
+                }
+            }
+            if (row != -1) break;
+        }
+    }
+
+    public void Blast(Transform currentTransform)
+    {
+        int row = -1;
+        int col = -1;
+        for (int i = 0; i < levelData.grid_height; i++)
+        {
+            for (int j = 0; j < levelData.grid_width; j++)
+            {
+                if (cellObjects[i, j] == currentTransform)
+                {
+                    row = i;
+                    col = j;
+                    break;
+                }
+            }
+            if (row != -1) break;
+        }
     }
 }

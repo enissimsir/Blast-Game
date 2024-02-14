@@ -3,44 +3,40 @@ using UnityEngine.EventSystems;
 
 public class Tile : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
-    private Vector3 startDragPosition;
-    private Vector3 endDragPosition;
+    private Vector2 startDragPosition;
+    private Vector2 endDragPosition;
     private int moveAngle;
+    private GameView gameView;
 
     private void Start()
     {
-        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
-        float originalWidth = spriteRenderer.sprite.bounds.size.x;
-        Debug.Log("original width = " +  originalWidth);
-
+        gameView = GameView.Instance;
     }
 
-    private void OnMouseDown()
+    public void OnPointerDown(PointerEventData eventData)
     {
-        Debug.Log("Tıkladı");
-        startDragPosition = transform.position;
+        startDragPosition = eventData.position;
     }
 
-    private void OnMouseUp()
+    public void OnPointerUp(PointerEventData eventData)
     {
-        Debug.Log("Tıklama kesildi");
-        endDragPosition = transform.position;
-        MoveCalculator();
+        endDragPosition = eventData.position;
+        //dragging
+        if((endDragPosition-startDragPosition).magnitude > 0.1f)
+        {
+            MoveCalculator();
+            gameView.MoveTheCell(transform, moveAngle);
+        }
+        //clicking
+        else
+        {
+            Debug.Log("klikk");
+        }
     }
 
     private void MoveCalculator()
     {
         moveAngle = (int)(Mathf.Atan2(endDragPosition.y - startDragPosition.y, endDragPosition.x - startDragPosition.x) * 180 / Mathf.PI);
         Debug.Log("Move Angle: " + moveAngle);
-    }
-
-    public void OnPointerDown(PointerEventData eventData)
-    {
-        Debug.Log("tik");
-    }
-
-    public void OnPointerUp(PointerEventData eventData)
-    {
-        Debug.Log("tiiik");
     }
 }
