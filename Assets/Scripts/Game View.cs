@@ -315,16 +315,15 @@ public class GameView : MonoBehaviour
     {
         int row, col;
         LocationFinder(out row, out col, currentTransform);
-        Cell currentCell = new Cell(row, col, objectType[row,col]);
-        List<Cell> connectedCells = new List<Cell>();
-        connectedCells = FindConnectedCells(currentCell);
+        Cell currentCell = FindCell(row, col, cells);
+        List<Cell> connectedCells = FindConnectedCells(currentCell);
         foreach(Cell cell in connectedCells)
         {
-            Debug.Log("row = " + row + "col = " + col);
+            Debug.Log("row = " + cell.Row + "col = " + cell.Col);
         }
     }
 
-    private List<Cell> FindConnectedCells(Cell startCell)
+    private List<Cell> FindConnectedCells(Cell startCell) // Finds connected cells by BFS algorithm
     {
         List<Cell> connectedCells = new List<Cell>();
         Queue<Cell> queue = new Queue<Cell>();
@@ -371,5 +370,17 @@ public class GameView : MonoBehaviour
         }
     }
 
-    
+    private Cell FindCell(int row, int col, List<Cell> linkedList)
+    {
+        foreach (Cell cell in linkedList)
+        {
+            if (cell.Row == row && cell.Col == col)
+            {
+                return cell;
+            }
+        }
+        return null; // Belirtilen row ve col değerlerine sahip hücre bulunamadı.
+    }
+
+
 }
