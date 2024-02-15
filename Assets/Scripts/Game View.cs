@@ -11,6 +11,22 @@ using System.Drawing;
 
 public class GameView : MonoBehaviour
 {
+    public class Cell
+    {
+        public int Row { get; set; }
+        public int Col { get; set; }
+        public string Type { get; set; }
+        public List<Cell> Neighbors { get; set; }
+
+        public Cell(int row, int col, String type)
+        {
+            Row = row;
+            Col = col;
+            Type = type;
+            Neighbors = new List<Cell>();
+        }
+    }
+
     private static GameView _instance;
     [System.NonSerialized] public LevelData levelData;
 
@@ -145,34 +161,40 @@ public class GameView : MonoBehaviour
                 // Debug.Log(cellRectTransform.anchoredPosition);
 
                 cellObjects[row, col] = cellObject.transform;
-                objectType[row,col] = levelData.grid[index];
+                objectType[row, col] = cellObject.name;
 
-                Cell newCell = new Cell(row, col, levelData.grid[index]);
-                List<Cell> neighborsOfNewCell = new List<Cell>();
+                Cell newCell = new Cell(row, col, cellObject.name);
                 cells.Add(newCell);
-                foreach (Cell cell in cells)
-                {
-                    if(cell.Row == row)
-                    {
-                        if(cell.Col == col-1 || cell.Col == col + 1)
-                        {
-                            neighborsOfNewCell.Add(cell);
-                        }
-                    }
-                    else if(cell.Col == col)
-                    {
-                        if(cell.Row == row-1 || cell.Row == row + 1)
-                        {
-                            neighborsOfNewCell.Add(cell);
-                        }
-                    }
-                }
-                newCell.Neighbors = neighborsOfNewCell;
-
+                
                 index++;
             }
         }
      //   Debug.Log("00 = " + cellObjects[0, 0].gameObject.name);
+        foreach(Cell mainCell in cells)
+        {
+            Debug.Log("r and c = " + mainCell.Row + " " + mainCell.Col);
+            List<Cell> neighborsOfNewCell = new List<Cell>();
+            foreach (Cell cell in cells)
+            {
+                if (cell.Row == mainCell.Row)
+                {
+                    if (cell.Col == mainCell.Col - 1 || cell.Col == mainCell.Col + 1)
+                    {
+                        neighborsOfNewCell.Add(cell);
+                        Debug.Log("yeni komsu = " + cell.Row + " " + cell.Col);
+                    }
+                }
+                else if (cell.Col == mainCell.Col)
+                {
+                    if (cell.Row == mainCell.Row - 1 || cell.Row == mainCell.Row + 1)
+                    {
+                        neighborsOfNewCell.Add(cell);
+                        Debug.Log("yeni komsu = " + cell.Row + " " + cell.Col);
+                    }
+                }
+            }
+            mainCell.Neighbors = neighborsOfNewCell;
+        }
     }
 
     private GameObject ChooseTheNewCell(String cell)
