@@ -6,8 +6,7 @@ using System.IO;
 using System;
 using System.Reflection;
 using System.Drawing;
-
-
+using Unity.VisualScripting;
 
 public class GameView : MonoBehaviour
 {
@@ -172,7 +171,6 @@ public class GameView : MonoBehaviour
      //   Debug.Log("00 = " + cellObjects[0, 0].gameObject.name);
         foreach(Cell mainCell in cells)
         {
-            Debug.Log("r and c = " + mainCell.Row + " " + mainCell.Col);
             List<Cell> neighborsOfNewCell = new List<Cell>();
             foreach (Cell cell in cells)
             {
@@ -181,7 +179,6 @@ public class GameView : MonoBehaviour
                     if (cell.Col == mainCell.Col - 1 || cell.Col == mainCell.Col + 1)
                     {
                         neighborsOfNewCell.Add(cell);
-                        Debug.Log("yeni komsu = " + cell.Row + " " + cell.Col);
                     }
                 }
                 else if (cell.Col == mainCell.Col)
@@ -189,7 +186,6 @@ public class GameView : MonoBehaviour
                     if (cell.Row == mainCell.Row - 1 || cell.Row == mainCell.Row + 1)
                     {
                         neighborsOfNewCell.Add(cell);
-                        Debug.Log("yeni komsu = " + cell.Row + " " + cell.Col);
                     }
                 }
             }
@@ -259,9 +255,9 @@ public class GameView : MonoBehaviour
 
     public void MoveTheCell(Transform currentTransform,int moveAngle)
     {
-        int row, col, newRow, newCol;
+        int row, col, newRow = -1, newCol = -1;
         LocationFinder(out row, out col,currentTransform);
-        if (objectType[row,col]=="r" || objectType[row, col] == "b" || objectType[row, col] == "g" || objectType[row, col] == "y")
+        if (objectType[row,col]=="red tile(Clone)" || objectType[row, col] == "blue tile(Clone)" || objectType[row, col] == "green  tile(Clone)" || objectType[row, col] == "yellow tile(Clone)")
         {
             if (moveAngle <= 135 && moveAngle >= 45)
             {
@@ -309,6 +305,13 @@ public class GameView : MonoBehaviour
         String temp = objectType[row1, col1];
         objectType[row1, col1] = objectType[row2, col2];
         objectType[row2 , col2] = objectType[row1, col1];
+
+        Cell cell1 = FindCell(row1, col1, cells);
+        Cell cell2 = FindCell(row2, col2, cells);
+        temp = cell1.Type;
+        cell1.Type = cell2.Type;
+        cell2.Type = temp;
+
     }
 
     public void Blast(Transform currentTransform)
@@ -317,9 +320,12 @@ public class GameView : MonoBehaviour
         LocationFinder(out row, out col, currentTransform);
         Cell currentCell = FindCell(row, col, cells);
         List<Cell> connectedCells = FindConnectedCells(currentCell);
-        foreach(Cell cell in connectedCells)
+        if(connectedCells.Count > 1)
         {
-            Debug.Log("row = " + cell.Row + "col = " + cell.Col);
+            foreach (Cell cell in connectedCells)
+            {
+                cellObjects[cell.Row, cell.Col].gameObject.SetActive(false);
+            }
         }
     }
 
