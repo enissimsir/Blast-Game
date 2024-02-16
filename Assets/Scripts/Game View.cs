@@ -18,6 +18,8 @@ public class GameView : MonoBehaviour
         public string Type { get; set; }
         public List<Cell> Neighbors { get; set; }
 
+        public bool isActive;
+
         public Cell(int row, int col, String type)
         {
             Row = row;
@@ -40,6 +42,7 @@ public class GameView : MonoBehaviour
     [System.NonSerialized] public String[,] objectType;
 
     private List<Cell> cells;
+    private int totalGridSize;
 
     public static GameView Instance
     {
@@ -74,8 +77,9 @@ public class GameView : MonoBehaviour
         {
             Destroy(gameObject);
         }
-        cellObjects = new Transform[20, 20];
-        objectType = new String[20,20];
+        totalGridSize = 100;
+        cellObjects = new Transform[totalGridSize+10, 30];
+        objectType = new String[totalGridSize + 10, 30];
         cells = new List<Cell>();
     }
 
@@ -132,7 +136,7 @@ public class GameView : MonoBehaviour
         float desiredCellEdge = gridWidth / levelData.grid_width;
         float scaleFactor = desiredCellEdge / originalCellWidth;
 
-        gridRectTransform.sizeDelta = new Vector2(desiredCellEdge * levelData.grid_width, desiredCellEdge * levelData.grid_height);
+        gridRectTransform.sizeDelta = new Vector2(desiredCellEdge * levelData.grid_width, desiredCellEdge * totalGridSize);
         gridLayout.cellSize = new Vector2(desiredCellEdge, desiredCellEdge);
         Debug.Log("desired edge = " + desiredCellEdge + "scale = " + scaleFactor);
         // Önce gridi temizle
@@ -143,6 +147,7 @@ public class GameView : MonoBehaviour
         float startPositionX = -(desiredCellEdge * levelData.grid_width-1) / 4;
         float startPositionY = -(desiredCellEdge * levelData.grid_height-1) / 4;
         int index = 0;
+
         for (int row = 0; row < levelData.grid_height; row++)
         {
             for (int col = 0; col < levelData.grid_width; col++)
@@ -164,12 +169,43 @@ public class GameView : MonoBehaviour
                 objectType[row, col] = cellObject.name;
 
                 Cell newCell = new Cell(row, col, cellObject.name);
+                newCell.isActive = true;
                 cells.Add(newCell);
                 
                 index++;
             }
         }
-     //   Debug.Log("00 = " + cellObjects[0, 0].gameObject.name);
+
+        for(int row = levelData.grid_height; row < totalGridSize; row++)
+        {
+            for (int col = 0; col < levelData.grid_width; col++)
+            {
+                // Instantiate the tile prefab
+                GameObject cellObject = ChooseTheNewCell("rand");
+
+                // Set gridObject as parent
+                cellObject.transform.SetParent(gridObject.transform, false);
+
+                // Adjust Tile's position
+                Transform cellTransform = cellObject.GetComponent<Transform>();
+                cellTransform.localPosition = new Vector2(col * desiredCellEdge / 2 + startPositionX, row * desiredCellEdge / 2 + startPositionY);
+                cellTransform.localScale = new Vector2(scaleFactor / 2, scaleFactor / 2);
+
+                // Debug.Log(cellRectTransform.anchoredPosition);
+
+                cellObjects[row, col] = cellObject.transform;
+                objectType[row, col] = cellObject.name;
+
+                Cell newCell = new Cell(row, col, cellObject.name);
+                newCell.isActive = false;
+                cells.Add(newCell);
+
+                cellObject.SetActive(false);
+
+                index++;
+            }
+        }
+
         foreach(Cell mainCell in cells)
         {
             List<Cell> neighborsOfNewCell = new List<Cell>();
@@ -338,91 +374,30 @@ public class GameView : MonoBehaviour
 
         foreach(Cell cell in cellListDownTop)
         {
-            if (cell.Row < levelData.grid_height - 1 && objectType[cell.Row + 1,cell.Col] == "empty")
+            if (cell.Row < totalGridSize - 1 && objectType[cell.Row + 1,cell.Col] == "empty")
             {
                 int movedCellCount = 0;
-                for (int i = cell.Row+1; i < levelData.grid_height; i++)
+                for (int i = cell.Row+1; i < totalGridSize; i++)
                 {
-                    Debug.Log("Hucre = " + i + " " + cell.Col);
                     if (objectType[i, cell.Col] != "empty")
                     {
-                        Debug.Log("Icine girdi, " + i + " " + cell.Col + " = " + objectType[i,cell.Col]);
                         PositionSwap(i, cell.Col, cell.Row + 1 + movedCellCount, cell.Col);
+                        if(i>=levelData.grid_height && cell.Row + 1 + movedCellCount < levelData.grid_height)
+                        {
+                            Cell ascendingCell = FindCell(i, cell.Col, cells);
+                            ascendingCell.isActive = false;
+                            cellObjects[i, cell.Col].gameObject.SetActive(false);
+
+                            Cell fallenCell = FindCell(cell.Row+1+movedCellCount,cell.Col, cells);
+                            fallenCell.isActive = true;
+                            cellObjects[cell.Row + 1 + movedCellCount, cell.Col].gameObject.SetActive(true);
+                        }
                         movedCellCount++;
                     }
                 }
             }
         }
     }
-
-
-
-    /*
-    private void DropCellsIntoEmptyCells(List<Cell> connectedCells)
-    {
-        List<Cell> cellListDownTop = new List<Cell>();
-        cellListDownTop = cells.OrderBy(cell => cell.Row).ToList();
-        int minRow = connectedCells.OrderBy(cell => cell.Row).First().Row;
-
-        for(int i = minRow; i < levelData.grid_height; i++)
-        {
-            cellListDownTop = cells.OrderBy(cell => cell.Row).ToList();
-            foreach (Cell cell in cellListDownTop)
-            {
-                if (cell.Row > 0)
-                {
-                    if (cell.Type != "empty" && objectType[cell.Row - 1, cell.Col] == "empty")
-                    {
-                        PositionSwap(cell.Row, cell.Col, cell.Row - 1, cell.Col);
-                    }
-                }
-            }
-        }
-
-        
-    } */
-
-    /*
-    private void DropCellsIntoEmptyCells(List<Cell> connectedCells)
-    {
-        List<Cell> cellListTopDown = new List<Cell>();
-
-        cellListTopDown = cells.OrderByDescending(cell => cell.Row).ToList();
-        int minRow = connectedCells.OrderBy(cell => cell.Row).First().Row;
-
-        for (int i = minRow+1; i < levelData.grid_height; i++)
-        {
-            foreach(Cell cell in cellListTopDown)
-            {
-                if(cell.Type != "empty" && cell.Row > 0 && objectType[cell.Row-1, cell.Col] == "empty")
-                {
-                    PositionSwap(cell.Row, cell.Col, cell.Row-1, cell.Col);
-                }
-            }
-            /*
-            foreach (Cell cell in cellList)
-            {
-                if (cell.Row < levelData.grid_height - 1)
-                {
-                    PositionSwap(cell.Row, cell.Col, cell.Row + 1, cell.Col);
-                }
-            } */ /*
-        }
-        
-    } */
-
-    /*
-    private void DropCellsIntoEmptyCells()
-    {
-        
-        foreach (Cell cell in cells)
-        {
-            if (cell.Row > 0 && objectType[cell.Row - 1, cell.Col] == "empty")
-            {
-                positionSwap(cell.Row, cell.Col, cell.Row - 1, cell.Col);
-            }
-        } 
-    } */
 
     private List<Cell> FindConnectedCells(Cell startCell) // Finds connected cells by BFS algorithm
     {
