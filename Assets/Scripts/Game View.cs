@@ -7,6 +7,7 @@ using System;
 using System.Reflection;
 using System.Drawing;
 using Unity.VisualScripting;
+using System.Linq;
 
 public class GameView : MonoBehaviour
 {
@@ -265,7 +266,7 @@ public class GameView : MonoBehaviour
                 {
                     newRow = row + 1;
                     newCol = col;
-                    positionSwap(row, col, newRow, newCol);
+                    PositionSwap(row, col, newRow, newCol);
                 }
             }
             else if (moveAngle <= -135 || moveAngle >= 135)
@@ -274,7 +275,7 @@ public class GameView : MonoBehaviour
                 {
                     newRow = row;
                     newCol = col - 1;
-                    positionSwap(row, col, newRow, newCol);
+                    PositionSwap(row, col, newRow, newCol);
                 }
             }
             else if (moveAngle <= 45 && moveAngle >= -45)
@@ -283,15 +284,14 @@ public class GameView : MonoBehaviour
                 {
                     newRow = row;
                     newCol = col + 1;
-                    positionSwap(row, col, newRow, newCol);
+                    PositionSwap(row, col, newRow, newCol);
                 }
             }
         }
     }
 
-    private void positionSwap(int row1, int col1, int row2, int col2)
+    private void PositionSwap(int row1, int col1, int row2, int col2)
     {
-        
         Transform tempTransform1 = cellObjects[row1, col1];
         Transform tempTransform2 = cellObjects[row2, col2];
 
@@ -304,14 +304,13 @@ public class GameView : MonoBehaviour
 
         String temp = objectType[row1, col1];
         objectType[row1, col1] = objectType[row2, col2];
-        objectType[row2 , col2] = objectType[row1, col1];
+        objectType[row2 , col2] = temp;
 
         Cell cell1 = FindCell(row1, col1, cells);
         Cell cell2 = FindCell(row2, col2, cells);
         temp = cell1.Type;
         cell1.Type = cell2.Type;
         cell2.Type = temp;
-
     }
 
     public void Blast(Transform currentTransform)
@@ -325,9 +324,105 @@ public class GameView : MonoBehaviour
             foreach (Cell cell in connectedCells)
             {
                 cellObjects[cell.Row, cell.Col].gameObject.SetActive(false);
+                cell.Type = "empty";
+                objectType[cell.Row, cell.Col] = "empty";
+            }
+            DropCellsIntoEmptyCells(connectedCells);
+        }
+    }
+
+    private void DropCellsIntoEmptyCells(List<Cell> connectedCells)
+    {
+        List<Cell> cellListDownTop = new List<Cell>();
+        cellListDownTop = cells.OrderBy(cell => cell.Row).ToList();
+
+        foreach(Cell cell in cellListDownTop)
+        {
+            if (cell.Row < levelData.grid_height - 1 && objectType[cell.Row + 1,cell.Col] == "empty")
+            {
+                int movedCellCount = 0;
+                for (int i = cell.Row+1; i < levelData.grid_height; i++)
+                {
+                    Debug.Log("Hucre = " + i + " " + cell.Col);
+                    if (objectType[i, cell.Col] != "empty")
+                    {
+                        Debug.Log("Icine girdi, " + i + " " + cell.Col + " = " + objectType[i,cell.Col]);
+                        PositionSwap(i, cell.Col, cell.Row + 1 + movedCellCount, cell.Col);
+                        movedCellCount++;
+                    }
+                }
             }
         }
     }
+
+
+
+    /*
+    private void DropCellsIntoEmptyCells(List<Cell> connectedCells)
+    {
+        List<Cell> cellListDownTop = new List<Cell>();
+        cellListDownTop = cells.OrderBy(cell => cell.Row).ToList();
+        int minRow = connectedCells.OrderBy(cell => cell.Row).First().Row;
+
+        for(int i = minRow; i < levelData.grid_height; i++)
+        {
+            cellListDownTop = cells.OrderBy(cell => cell.Row).ToList();
+            foreach (Cell cell in cellListDownTop)
+            {
+                if (cell.Row > 0)
+                {
+                    if (cell.Type != "empty" && objectType[cell.Row - 1, cell.Col] == "empty")
+                    {
+                        PositionSwap(cell.Row, cell.Col, cell.Row - 1, cell.Col);
+                    }
+                }
+            }
+        }
+
+        
+    } */
+
+    /*
+    private void DropCellsIntoEmptyCells(List<Cell> connectedCells)
+    {
+        List<Cell> cellListTopDown = new List<Cell>();
+
+        cellListTopDown = cells.OrderByDescending(cell => cell.Row).ToList();
+        int minRow = connectedCells.OrderBy(cell => cell.Row).First().Row;
+
+        for (int i = minRow+1; i < levelData.grid_height; i++)
+        {
+            foreach(Cell cell in cellListTopDown)
+            {
+                if(cell.Type != "empty" && cell.Row > 0 && objectType[cell.Row-1, cell.Col] == "empty")
+                {
+                    PositionSwap(cell.Row, cell.Col, cell.Row-1, cell.Col);
+                }
+            }
+            /*
+            foreach (Cell cell in cellList)
+            {
+                if (cell.Row < levelData.grid_height - 1)
+                {
+                    PositionSwap(cell.Row, cell.Col, cell.Row + 1, cell.Col);
+                }
+            } */ /*
+        }
+        
+    } */
+
+    /*
+    private void DropCellsIntoEmptyCells()
+    {
+        
+        foreach (Cell cell in cells)
+        {
+            if (cell.Row > 0 && objectType[cell.Row - 1, cell.Col] == "empty")
+            {
+                positionSwap(cell.Row, cell.Col, cell.Row - 1, cell.Col);
+            }
+        } 
+    } */
 
     private List<Cell> FindConnectedCells(Cell startCell) // Finds connected cells by BFS algorithm
     {
@@ -387,6 +482,4 @@ public class GameView : MonoBehaviour
         }
         return null; // Belirtilen row ve col değerlerine sahip hücre bulunamadı.
     }
-
-
 }
