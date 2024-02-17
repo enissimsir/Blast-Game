@@ -354,11 +354,7 @@ MonoBehaviour:
   blueSprite: {fileID: 21300000, guid: c78192cb6cd870d44815a1e3cde5ea05, type: 3}
   redSprite: {fileID: 21300000, guid: 6a8d54a81ce1a3348ba15df6157f4b8e, type: 3}
   yellowSprite: {fileID: 21300000, guid: cecb16529974fb94b8dd8c23649dcd85, type: 3}
-  tntSprites:
-  - {fileID: 21300000, guid: 6a8d54a81ce1a3348ba15df6157f4b8e, type: 3}
-  - {fileID: 21300000, guid: 064dfa839aeeebb4d8597ab07bb3cde3, type: 3}
-  - {fileID: 21300000, guid: c78192cb6cd870d44815a1e3cde5ea05, type: 3}
-  - {fileID: 21300000, guid: cecb16529974fb94b8dd8c23649dcd85, type: 3}
+  tntSprite: {fileID: 21300000, guid: d33d063354d9a14439ec17457a34691b, type: 3}
   levelText: {fileID: 304249600}
 --- !u!114 &646124007
 MonoBehaviour:
