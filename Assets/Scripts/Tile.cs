@@ -34,6 +34,7 @@ public class Tile : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         }
     }
 
+    // Examine the move angle to see which way it's shifted
     private void MoveCalculator()
     {
         moveAngle = (int)(Mathf.Atan2(endDragPosition.y - startDragPosition.y, endDragPosition.x - startDragPosition.x) * 180 / Mathf.PI);

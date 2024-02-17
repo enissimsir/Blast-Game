@@ -26,9 +26,6 @@ public class GameController : MonoBehaviour
         }
     }
 
-    // Diğer GameController fonksiyonları buraya eklenebilir
-
-    // Yeni sahneyi yüklemek için metot
     public void LoadTheLevel()
     {
         buttonObject.SetActive(false);

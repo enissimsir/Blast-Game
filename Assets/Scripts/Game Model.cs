@@ -25,8 +25,6 @@ public class GameModel : MonoBehaviour
         }
     }
 
-    // Diğer GameModel fonksiyonları buraya eklenebilir
-
     private void Awake()
     {
         if (_instance == null)
@@ -42,5 +40,4 @@ public class GameModel : MonoBehaviour
         GameView.Instance.UpdateLevelText(1);
     }
 
-    // Oyun yönetimiyle ilgili diğer metotlar buraya eklenebilir
 }

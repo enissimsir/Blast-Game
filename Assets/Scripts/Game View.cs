@@ -50,8 +50,8 @@ public class GameView : MonoBehaviour
     [System.NonSerialized] public Transform[,] cellObjects;
     [System.NonSerialized] public String[,] objectType;
 
-    private List<Cell> cells;
-    private int totalGridSize;
+    private List<Cell> cells; // In this list, there are all cells in the grid (the visible ones, unvisible ones, boxes, tnts etc.)
+    private int totalGridSize; // This is not the grid size in the json files. This value includes the cells in the pool
 
     private int _boxCount;
     private int _stoneCount;
@@ -75,9 +75,7 @@ public class GameView : MonoBehaviour
         }
     }
 
-    public Text levelText; // Seviye bilgisini göstermek için bir Text bileşeni
-
-    // Model ile etkileşime geçerek oyunun durumunu güncelleyen metotlar buraya eklenebilir
+    public Text levelText;
 
     private void Awake()
     {
@@ -96,7 +94,7 @@ public class GameView : MonoBehaviour
         cells = new List<Cell>();
     }
 
-    // Seviye bilgisini güncelleyen metot
+    // A method to update the button on the main menu
     public void UpdateLevelText(int level)
     {
         if (levelText != null)
@@ -105,8 +103,7 @@ public class GameView : MonoBehaviour
         }
     }
 
-    // Diğer Game View metotları buraya eklenebilir
-
+    // This method reads the values in the json files and calls the method that creates the grid
     public void LoadTheNextLevel(int level)
     {
         string levelsFolderPath = "Assets/Levels";
@@ -132,9 +129,7 @@ public class GameView : MonoBehaviour
                     _vaseCount++;
                 }
             }
-
-            // Okunan verileri kullanarak işlemler yapabilirsiniz
-            GenerateGrid(GetCellObjects());
+            GenerateGrid(cellObjects);
         }
         else
         {
@@ -142,15 +137,9 @@ public class GameView : MonoBehaviour
         }
     }
 
-    private Transform[,] GetCellObjects()
-    {
-        return cellObjects;
-    }
-
+    // This method creates the grid by using levelData values (the values readen from the json files)
     private void GenerateGrid(Transform[,] cellObjects)
     {
-       // cellObjects = new Transform[levelData.grid_height, levelData.grid_width];
-
         // Determining the edge sizes of cells in the grid
         gridLayout = gridObject.GetComponent<GridLayoutGroup>();
         RectTransform gridRectTransform = gridObject.GetComponent<RectTransform>();
@@ -231,6 +220,7 @@ public class GameView : MonoBehaviour
             }
         }
 
+        // Here, the neighbor cells of all cells are determined
         foreach(Cell mainCell in cells)
         {
             List<Cell> neighborsOfNewCell = new List<Cell>();
@@ -253,9 +243,12 @@ public class GameView : MonoBehaviour
             }
             mainCell.Neighbors = neighborsOfNewCell;
         }
-        DetectCellsBiggerThan5x5();
+
+        // Detect groups bigger than 5x5 to turn them into tnt state
+        DetectCellGroupsBiggerThan5();
     }
 
+    // Create the right object based on the values on levelData
     private GameObject ChooseTheNewCell(String cell)
     {
         if (cell == "r")
@@ -316,13 +309,42 @@ public class GameView : MonoBehaviour
         public List<string> grid;
     }
 
+    // This method finds connected cells by BFS (Breadth-First Search) Algorithm
+    // This method takes the starting cell as an argument and creates a list with linked cells of the same color and returns it
+    private List<Cell> FindConnectedCells(Cell startCell)
+    {
+        List<Cell> connectedCells = new List<Cell>();
+        Queue<Cell> queue = new Queue<Cell>();
+        HashSet<Cell> visited = new HashSet<Cell>();
+
+        queue.Enqueue(startCell);
+        visited.Add(startCell);
+
+        while (queue.Count > 0)
+        {
+            Cell currentCell = queue.Dequeue();
+            connectedCells.Add(currentCell);
+
+            foreach (Cell neighbor in currentCell.Neighbors)
+            {
+                if ((neighbor.Type.Contains(startCell.Type) || startCell.Type.Contains(neighbor.Type)) && neighbor.Row < levelData.grid_height && !visited.Contains(neighbor))
+                {
+                    queue.Enqueue(neighbor);
+                    visited.Add(neighbor);
+                }
+            }
+        }
+        return connectedCells;
+    }
+
+    // If the user drags the cell, this method gets called from Tile script
     public void MoveTheCell(Transform currentTransform,int moveAngle)
     {
         int row, col, newRow = -1, newCol = -1;
         LocationFinder(out row, out col,currentTransform);
         if (objectType[row,col].Contains("red tile(Clone)") || objectType[row, col].Contains("blue tile(Clone)") || objectType[row, col].Contains("green tile(Clone)") || objectType[row, col].Contains("yellow tile(Clone)"))
         {
-            if (moveAngle <= 135 && moveAngle >= 45)
+            if (moveAngle <= 135 && moveAngle >= 45) // The user dragged into top
             {
                 if (row < levelData.grid_height - 1)
                 {
@@ -331,7 +353,7 @@ public class GameView : MonoBehaviour
                     PositionSwap(row, col, newRow, newCol);
                 }
             }
-            else if (moveAngle <= -135 || moveAngle >= 135)
+            else if (moveAngle <= -135 || moveAngle >= 135) // The user dragged into left
             {
                 if (col > 0)
                 {
@@ -340,7 +362,7 @@ public class GameView : MonoBehaviour
                     PositionSwap(row, col, newRow, newCol);
                 }
             }
-            else if (moveAngle <= 45 && moveAngle >= -45)
+            else if (moveAngle <= 45 && moveAngle >= -45) // The user dragged into right
             {
                 if (col < levelData.grid_width - 1)
                 {
@@ -350,9 +372,10 @@ public class GameView : MonoBehaviour
                 }
             }
         }
-        DetectCellsBiggerThan5x5();
+        DetectCellGroupsBiggerThan5();
     }
 
+    // A method to swap 2 cells
     private void PositionSwap(int row1, int col1, int row2, int col2)
     {
         Transform tempTransform1 = cellObjects[row1, col1];
@@ -376,10 +399,13 @@ public class GameView : MonoBehaviour
         cell2.Type = temp;
     }
 
+    // The mothod to blast a cell when it's tapped. It gets called from Tile script
     public void Blast(Transform currentTransform)
     {
         int row, col;
         LocationFinder(out row, out col, currentTransform);
+
+        //Checking if it is a tile cell
         if (objectType[row, col].Contains("tile(Clone)"))
         {
             Cell currentCell = FindCell(row, col, cells);
@@ -406,7 +432,9 @@ public class GameView : MonoBehaviour
                 DropCellsIntoEmptyCells();
                 ControlIfGameFinished();
             }
-        } else if(objectType[row, col].Contains("tnt"))
+        } 
+        // Checking if it is a tnt cell
+        else if(objectType[row, col].Contains("tnt"))
         {
             Cell currentCell = FindCell(row, col, cells);
             TNTExplotion(currentCell);
@@ -415,6 +443,7 @@ public class GameView : MonoBehaviour
         }
     }
 
+    // Destroy the cells inside the tnt explotion area
     private void TNTExplotion(Cell tntCell)
     {
         int rowStart, colStart, rowEnd, colEnd;
@@ -507,10 +536,11 @@ public class GameView : MonoBehaviour
                 }
             }
         }
-        DetectCellsBiggerThan5x5();
+        DetectCellGroupsBiggerThan5();
     }
 
-    private void DetectCellsBiggerThan5x5()
+    // It detects the cell groups bigger than 5 cells and converts them into tnt state by another method
+    private void DetectCellGroupsBiggerThan5()
     {
         List<Cell> cellListDownTop = new List<Cell>();
         cellListDownTop = cells.OrderBy(cell => cell.Row).ToList();
@@ -565,32 +595,7 @@ public class GameView : MonoBehaviour
         }
     }
 
-    private List<Cell> FindConnectedCells(Cell startCell) // Finds connected cells by BFS algorithm
-    {
-        List<Cell> connectedCells = new List<Cell>();
-        Queue<Cell> queue = new Queue<Cell>();
-        HashSet<Cell> visited = new HashSet<Cell>();
-
-        queue.Enqueue(startCell);
-        visited.Add(startCell);
-
-        while (queue.Count > 0)
-        {
-            Cell currentCell = queue.Dequeue();
-            connectedCells.Add(currentCell);
-
-            foreach (Cell neighbor in currentCell.Neighbors)
-            {
-                if ((neighbor.Type.Contains(startCell.Type) || startCell.Type.Contains(neighbor.Type)) && neighbor.Row < levelData.grid_height && !visited.Contains(neighbor))
-                {
-                    queue.Enqueue(neighbor);
-                    visited.Add(neighbor);
-                }
-            }
-        }
-        return connectedCells;
-    }
-
+    // Takes a transform variable as an argument and returns the row and col values of that cell in the grid
     private void LocationFinder(out int row, out int col, Transform currentTransform)
     {
         row = -1;
@@ -610,6 +615,7 @@ public class GameView : MonoBehaviour
         }
     }
 
+    // Takes row and col values as an argument and returns the Cell class variable
     private Cell FindCell(int row, int col, List<Cell> linkedList)
     {
         foreach (Cell cell in linkedList)
