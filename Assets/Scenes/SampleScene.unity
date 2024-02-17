@@ -349,6 +349,7 @@ MonoBehaviour:
   - {fileID: 7077176022927763030, guid: 52eaf5b8a0218d54fa9284db11fec479, type: 3}
   - {fileID: 8541636784591438903, guid: 1ba9d6994ef06b845980627171f903f4, type: 3}
   boxTilePrefab: {fileID: 9017098482640002553, guid: ff0efd11ec5235e4dab4db2d29f5ac36, type: 3}
+  stoneTilePrefab: {fileID: 8990328920034752417, guid: 77ca2310776b9fe48b6d5e09bb72ae58, type: 3}
   levelText: {fileID: 304249600}
 --- !u!114 &646124007
 MonoBehaviour:

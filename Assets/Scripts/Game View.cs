@@ -37,12 +37,17 @@ public class GameView : MonoBehaviour
 
     public GameObject[] colorPrefabs;
     public GameObject boxTilePrefab;
+    public GameObject stoneTilePrefab;
 
     [System.NonSerialized] public Transform[,] cellObjects;
     [System.NonSerialized] public String[,] objectType;
 
     private List<Cell> cells;
     private int totalGridSize;
+
+    private int _boxCount;
+    private int _stoneCount;
+    private int _vaseCount;
 
     public static GameView Instance
     {
@@ -78,7 +83,7 @@ public class GameView : MonoBehaviour
             Destroy(gameObject);
         }
         totalGridSize = 100;
-        cellObjects = new Transform[totalGridSize+10, 30];
+        cellObjects = new Transform[totalGridSize + 10, 30];
         objectType = new String[totalGridSize + 10, 30];
         cells = new List<Cell>();
     }
@@ -105,10 +110,23 @@ public class GameView : MonoBehaviour
             string jsonString = File.ReadAllText(filePath);
             levelData = JsonUtility.FromJson<LevelData>(jsonString);
             Debug.Log(levelData.level_number);
+            _boxCount = 0; _stoneCount = 0; _vaseCount = 0;
+            foreach(String tile in levelData.grid)
+            {
+                if(tile == "bo")
+                {
+                    _boxCount++;
+                }else if(tile =="stone tile(Clone)")
+                {
+                    _stoneCount++;
+                }else if (tile =="vase tile(Clone)")
+                {
+                    _vaseCount++;
+                }
+            }
 
             // Okunan verileri kullanarak işlemler yapabilirsiniz
             GenerateGrid(GetCellObjects());
-
         }
         else
         {
@@ -271,7 +289,7 @@ public class GameView : MonoBehaviour
         }
         else if (cell == "s")
         {
-            return null;
+            return Instantiate(stoneTilePrefab);
         }
         else if (cell == "v")
         {
@@ -294,7 +312,7 @@ public class GameView : MonoBehaviour
     {
         int row, col, newRow = -1, newCol = -1;
         LocationFinder(out row, out col,currentTransform);
-        if (objectType[row,col]=="red tile(Clone)" || objectType[row, col] == "blue tile(Clone)" || objectType[row, col] == "green  tile(Clone)" || objectType[row, col] == "yellow tile(Clone)")
+        if (objectType[row,col]=="red tile(Clone)" || objectType[row, col] == "blue tile(Clone)" || objectType[row, col] == "green tile(Clone)" || objectType[row, col] == "yellow tile(Clone)")
         {
             if (moveAngle <= 135 && moveAngle >= 45)
             {
@@ -363,7 +381,40 @@ public class GameView : MonoBehaviour
                 cell.Type = "empty";
                 objectType[cell.Row, cell.Col] = "empty";
             }
+            BlastBox(connectedCells);
             DropCellsIntoEmptyCells(connectedCells);
+        }
+    }
+
+    private void BlastBox(List<Cell> connectedCells)
+    {
+        foreach(Cell cell in connectedCells)
+        {
+            foreach(Cell neighbor in cell.Neighbors)
+            {
+                if(neighbor.Type =="box tile(Clone)")
+                {
+                    cellObjects[neighbor.Row,neighbor.Col].gameObject.SetActive(false);
+                    neighbor.Type = "empty";
+                    objectType[neighbor.Row, neighbor.Col] = "empty";
+                    _boxCount--;
+                    ControlIfGameFinished();
+                }
+            }
+        }
+    }
+
+    private void ControlIfGameFinished()
+    {
+        if(_boxCount==0 && _stoneCount==0 && _vaseCount == 0)
+        {
+            cells.Clear();
+            foreach (Transform child in gridObject.transform)
+            {
+                Destroy(child.gameObject);
+            }
+            GameModel.Instance.currentLevel++;
+            GameController.Instance.buttonObject.SetActive(true);
         }
     }
 
