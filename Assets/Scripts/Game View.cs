@@ -39,11 +39,14 @@ public class GameView : MonoBehaviour
     public GameObject[] colorPrefabs;
     public GameObject boxTilePrefab;
     public GameObject stoneTilePrefab;
+    public GameObject tntTilePrefab;
 
     public Sprite greenSprite;
     public Sprite blueSprite;
     public Sprite redSprite;
     public Sprite yellowSprite;
+
+    public Sprite tntSprite;
 
     [System.NonSerialized] public Transform[,] cellObjects;
     [System.NonSerialized] public String[,] objectType;
@@ -384,9 +387,19 @@ public class GameView : MonoBehaviour
         {
             foreach (Cell cell in connectedCells)
             {
-                cellObjects[cell.Row, cell.Col].gameObject.SetActive(false);
-                cell.Type = "empty";
-                objectType[cell.Row, cell.Col] = "empty";
+                if(cellObjects[cell.Row, cell.Col]==currentTransform && objectType[cell.Row,cell.Col].Contains("tnt") && objectType[cell.Row, cell.Col].Contains("tile(Clone)"))
+                {
+                    SpriteRenderer spriteRenderer = cellObjects[cell.Row, cell.Col].gameObject.GetComponent<SpriteRenderer>();
+                    spriteRenderer.sprite = tntSprite;
+                    cell.Type = "tnt";
+                    objectType[cell.Row, cell.Col] = "tnt";
+                }
+                else
+                {
+                    cellObjects[cell.Row, cell.Col].gameObject.SetActive(false);
+                    cell.Type = "empty";
+                    objectType[cell.Row, cell.Col] = "empty";
+                }
             }
             BlastBox(connectedCells);
             DropCellsIntoEmptyCells(connectedCells);
@@ -484,10 +497,27 @@ public class GameView : MonoBehaviour
 
             if (spriteRenderer != null)
             {
-                if (cell.Type.Contains("red")) spriteRenderer.sprite = redSprite;
-                else if (cell.Type.Contains("green")) spriteRenderer.sprite = greenSprite;
-                else if (cell.Type.Contains("blue")) spriteRenderer.sprite = blueSprite;
-                else if (cell.Type.Contains("yellow")) spriteRenderer.sprite = yellowSprite;
+                if (cell.Type.Contains("red"))
+                {
+                    spriteRenderer.sprite = redSprite;
+                    cell.Type = "tnt red tile(Clone)";
+                }
+                else if (cell.Type.Contains("green"))
+                {
+                    spriteRenderer.sprite = greenSprite;
+                    cell.Type = "tnt green tile(Clone)";
+                }
+                else if (cell.Type.Contains("blue"))
+                {
+                    spriteRenderer.sprite = blueSprite;
+                    cell.Type = "tnt blue tile(Clone)";
+                }
+                else if (cell.Type.Contains("yellow"))
+                {
+                    spriteRenderer.sprite = yellowSprite;
+                    cell.Type = "tnt yellow tile(Clone)";
+                }
+                objectType[cell.Row, cell.Col] = cell.Type;
             }
             else
             {
