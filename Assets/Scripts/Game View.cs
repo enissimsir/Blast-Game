@@ -512,7 +512,7 @@ public class GameView : MonoBehaviour
 
             foreach (Cell neighbor in currentCell.Neighbors)
             {
-                if (neighbor.Type == startCell.Type && !visited.Contains(neighbor))
+                if (neighbor.Type == startCell.Type && neighbor.Row < levelData.grid_height && !visited.Contains(neighbor))
                 {
                     queue.Enqueue(neighbor);
                     visited.Add(neighbor);
