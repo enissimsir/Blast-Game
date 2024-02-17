@@ -7,18 +7,6 @@ public class LevelButtonController : MonoBehaviour
 {
     public Text levelText; // Seviye bilgisini göstermek için bir Text bileşeni
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
     // Seviye bilgisini güncelleyen metot
     public void UpdateLevelText(int level)
     {

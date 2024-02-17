@@ -39,7 +39,6 @@ public class GameView : MonoBehaviour
     public GameObject[] colorPrefabs;
     public GameObject boxTilePrefab;
     public GameObject stoneTilePrefab;
-    public GameObject tntTilePrefab;
 
     public Sprite greenSprite;
     public Sprite blueSprite;
@@ -321,7 +320,7 @@ public class GameView : MonoBehaviour
     {
         int row, col, newRow = -1, newCol = -1;
         LocationFinder(out row, out col,currentTransform);
-        if (objectType[row,col]=="red tile(Clone)" || objectType[row, col] == "blue tile(Clone)" || objectType[row, col] == "green tile(Clone)" || objectType[row, col] == "yellow tile(Clone)")
+        if (objectType[row,col].Contains("red tile(Clone)") || objectType[row, col].Contains("blue tile(Clone)") || objectType[row, col].Contains("green tile(Clone)") || objectType[row, col].Contains("yellow tile(Clone)"))
         {
             if (moveAngle <= 135 && moveAngle >= 45)
             {
@@ -381,28 +380,67 @@ public class GameView : MonoBehaviour
     {
         int row, col;
         LocationFinder(out row, out col, currentTransform);
-        Cell currentCell = FindCell(row, col, cells);
-        List<Cell> connectedCells = FindConnectedCells(currentCell);
-        if(connectedCells.Count > 1)
+        if (objectType[row, col].Contains("tile(Clone)"))
         {
-            foreach (Cell cell in connectedCells)
+            Cell currentCell = FindCell(row, col, cells);
+            List<Cell> connectedCells = FindConnectedCells(currentCell);
+            if (connectedCells.Count > 1)
             {
-                if(cellObjects[cell.Row, cell.Col]==currentTransform && objectType[cell.Row,cell.Col].Contains("tnt") && objectType[cell.Row, cell.Col].Contains("tile(Clone)"))
+                foreach (Cell cell in connectedCells)
                 {
-                    SpriteRenderer spriteRenderer = cellObjects[cell.Row, cell.Col].gameObject.GetComponent<SpriteRenderer>();
-                    spriteRenderer.sprite = tntSprite;
-                    cell.Type = "tnt";
-                    objectType[cell.Row, cell.Col] = "tnt";
+                    if (cellObjects[cell.Row, cell.Col] == currentTransform && objectType[cell.Row, cell.Col].Contains("tnt") && objectType[cell.Row, cell.Col].Contains("tile(Clone)"))
+                    {
+                        SpriteRenderer spriteRenderer = cellObjects[cell.Row, cell.Col].gameObject.GetComponent<SpriteRenderer>();
+                        spriteRenderer.sprite = tntSprite;
+                        cell.Type = "tnt";
+                        objectType[cell.Row, cell.Col] = "tnt";
+                    }
+                    else
+                    {
+                        cellObjects[cell.Row, cell.Col].gameObject.SetActive(false);
+                        cell.Type = "empty";
+                        objectType[cell.Row, cell.Col] = "empty";
+                    }
                 }
-                else
-                {
-                    cellObjects[cell.Row, cell.Col].gameObject.SetActive(false);
-                    cell.Type = "empty";
-                    objectType[cell.Row, cell.Col] = "empty";
-                }
+                BlastBox(connectedCells);
+                DropCellsIntoEmptyCells();
+                ControlIfGameFinished();
             }
-            BlastBox(connectedCells);
-            DropCellsIntoEmptyCells(connectedCells);
+        } else if(objectType[row, col].Contains("tnt"))
+        {
+            Cell currentCell = FindCell(row, col, cells);
+            TNTExplotion(currentCell);
+            DropCellsIntoEmptyCells();
+            ControlIfGameFinished();
+        }
+    }
+
+    private void TNTExplotion(Cell tntCell)
+    {
+        int rowStart, colStart, rowEnd, colEnd;
+        if (tntCell.Row < 2) rowStart = 0;
+        else rowStart = tntCell.Row - 2;
+        if (tntCell.Col < 2) colStart = 0;
+        else colStart = tntCell.Col - 2;
+        
+        if(tntCell.Row > levelData.grid_height-2) rowEnd = levelData.grid_height;
+        else rowEnd = tntCell.Row + 2;
+        if(tntCell.Col > levelData.grid_width-2) colEnd = levelData.grid_width;
+        else colEnd = tntCell.Col + 2;
+
+        for (int i = rowStart; i<rowEnd;i++)
+        {
+            for(int j = colStart; j<colEnd;j++)
+            {
+                if (objectType[i, j] == "box(Clone)") _boxCount--;
+                else if (objectType[i, j] == "stone(Clone)") _stoneCount--;
+                else if (objectType[i, j] == "vase(Clone)") _vaseCount--;
+
+                cellObjects[i,j].gameObject.SetActive(false);
+                Cell cellToBlast = FindCell(i, j, cells);
+                cellToBlast.Type = "empty";
+                objectType[i, j] = "empty";
+            }
         }
     }
 
@@ -418,7 +456,6 @@ public class GameView : MonoBehaviour
                     neighbor.Type = "empty";
                     objectType[neighbor.Row, neighbor.Col] = "empty";
                     _boxCount--;
-                    ControlIfGameFinished();
                 }
             }
         }
@@ -426,6 +463,7 @@ public class GameView : MonoBehaviour
 
     private void ControlIfGameFinished()
     {
+        Debug.Log("box count = " + _boxCount);
         if(_boxCount==0 && _stoneCount==0 && _vaseCount == 0)
         {
             cells.Clear();
@@ -435,10 +473,11 @@ public class GameView : MonoBehaviour
             }
             GameModel.Instance.currentLevel++;
             GameController.Instance.buttonObject.SetActive(true);
+            UpdateLevelText(GameModel.Instance.currentLevel);
         }
     }
 
-    private void DropCellsIntoEmptyCells(List<Cell> connectedCells)
+    private void DropCellsIntoEmptyCells()
     {
         List<Cell> cellListDownTop = new List<Cell>();
         cellListDownTop = cells.OrderBy(cell => cell.Row).ToList();
@@ -542,7 +581,7 @@ public class GameView : MonoBehaviour
 
             foreach (Cell neighbor in currentCell.Neighbors)
             {
-                if (neighbor.Type == startCell.Type && neighbor.Row < levelData.grid_height && !visited.Contains(neighbor))
+                if ((neighbor.Type.Contains(startCell.Type) || startCell.Type.Contains(neighbor.Type)) && neighbor.Row < levelData.grid_height && !visited.Contains(neighbor))
                 {
                     queue.Enqueue(neighbor);
                     visited.Add(neighbor);
@@ -560,12 +599,10 @@ public class GameView : MonoBehaviour
         {
             for (int j = 0; j < levelData.grid_width; j++)
             {
-             //   Debug.Log("cellObject[" + i + "," + j + "] = " + cellObjects[i, j] + " " + cellObjects[i, j].position);
                 if (cellObjects[i, j] == currentTransform)
                 {
                     row = i;
                     col = j;
-                   // Debug.Log("Tespit edilen row ve col = " + i + " " + j);
                     break;
                 }
             }
