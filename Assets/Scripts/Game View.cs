@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Drawing;
 using Unity.VisualScripting;
 using System.Linq;
+using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
 
 public class GameView : MonoBehaviour
 {
@@ -38,6 +39,11 @@ public class GameView : MonoBehaviour
     public GameObject[] colorPrefabs;
     public GameObject boxTilePrefab;
     public GameObject stoneTilePrefab;
+
+    public Sprite greenSprite;
+    public Sprite blueSprite;
+    public Sprite redSprite;
+    public Sprite yellowSprite;
 
     [System.NonSerialized] public Transform[,] cellObjects;
     [System.NonSerialized] public String[,] objectType;
@@ -132,7 +138,6 @@ public class GameView : MonoBehaviour
         {
             Debug.LogError("Level file not found: " + filePath);
         }
-
     }
 
     private Transform[,] GetCellObjects()
@@ -246,6 +251,7 @@ public class GameView : MonoBehaviour
             }
             mainCell.Neighbors = neighborsOfNewCell;
         }
+        DetectCellsBiggerThan5x5();
     }
 
     private GameObject ChooseTheNewCell(String cell)
@@ -342,6 +348,7 @@ public class GameView : MonoBehaviour
                 }
             }
         }
+        DetectCellsBiggerThan5x5();
     }
 
     private void PositionSwap(int row1, int col1, int row2, int col2)
@@ -392,7 +399,7 @@ public class GameView : MonoBehaviour
         {
             foreach(Cell neighbor in cell.Neighbors)
             {
-                if(neighbor.Type =="box tile(Clone)")
+                if(neighbor.Type =="box(Clone)")
                 {
                     cellObjects[neighbor.Row,neighbor.Col].gameObject.SetActive(false);
                     neighbor.Type = "empty";
@@ -446,6 +453,45 @@ public class GameView : MonoBehaviour
                         movedCellCount++;
                     }
                 }
+            }
+        }
+        DetectCellsBiggerThan5x5();
+    }
+
+    private void DetectCellsBiggerThan5x5()
+    {
+        List<Cell> cellListDownTop = new List<Cell>();
+        cellListDownTop = cells.OrderBy(cell => cell.Row).ToList();
+        for(int i = 0;i<levelData.grid_height*levelData.grid_height;i++)
+        {
+            if (cellListDownTop[i].Type.Contains("tile(Clone)")) //zaten tnt durumunda mı kontrolü
+            {
+                List<Cell> connectedCells = FindConnectedCells(cellListDownTop[i]);
+                if (connectedCells.Count >= 5)
+                {
+                    ConvertIntoTNTMode(connectedCells);
+                }
+            }
+        }
+    }
+
+    private void ConvertIntoTNTMode(List<Cell> connectedCells)
+    {
+        foreach(Cell cell in connectedCells)
+        {
+            SpriteRenderer spriteRenderer = cellObjects[cell.Row,cell.Col].gameObject.GetComponent<SpriteRenderer>();
+            
+
+            if (spriteRenderer != null)
+            {
+                if (cell.Type.Contains("red")) spriteRenderer.sprite = redSprite;
+                else if (cell.Type.Contains("green")) spriteRenderer.sprite = greenSprite;
+                else if (cell.Type.Contains("blue")) spriteRenderer.sprite = blueSprite;
+                else if (cell.Type.Contains("yellow")) spriteRenderer.sprite = yellowSprite;
+            }
+            else
+            {
+                Debug.LogError("Error code 1!");
             }
         }
     }
